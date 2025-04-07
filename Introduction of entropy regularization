@@ -1,0 +1,20 @@
+def entropy_regularization(logits):
+    probs = torch.softmax(logits, dim=1)
+    log_probs = torch.log(probs + 1e-9)
+    entropy = -torch.sum(probs * log_probs, dim=1).mean()
+    return entropy
+
+lambda_reg = 0.1
+model = SimpleNet()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+for epoch in range(100):
+    optimizer.zero_grad()
+    logits = model(X)
+    ce_loss = criterion(logits, y)
+    entropy_loss = entropy_regularization(logits)
+    loss = ce_loss - lambda_reg * entropy_loss
+    loss.backward()
+    optimizer.step()
+
+print("Done")

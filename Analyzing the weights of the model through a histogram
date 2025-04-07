@@ -1,0 +1,49 @@
+import torch
+import matplotlib.pyplot as plt
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SimpleModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Linear(10, 3)
+
+    def forward(self, x):
+        return self.fc(x)
+
+def plot_weights(model, lambda_val):
+    for name, param in model.named_parameters():
+        if 'weight' in name:
+            plt.hist(param.detach().numpy().flatten(), bins=40)
+            plt.title(f"Weight distribution for λ={lambda_val}: {name}")
+            plt.xlabel("Weight value")
+            plt.ylabel("Frequency")
+            plt.grid(True)
+            plt.show()
+
+torch.manual_seed(0)
+X = torch.randn(300, 10)
+y = torch.randint(0, 3, (300,))
+X_train, y_train = X[:200], y[:200]
+
+lambdas = [0.0, 0.01, 0.1, 0.5, 1.0]
+
+for lambda_entropy in lambdas:
+    model = SimpleModel()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+    for epoch in range(10):
+        model.train()
+        for i in range(0, 200, 32):
+            x_batch = X_train[i:i+32]
+            y_batch = y_train[i:i+32]
+            outputs = model(x_batch)
+            ce_loss = F.cross_entropy(outputs, y_batch)
+            p = torch.softmax(outputs, dim=1)
+            entropy_loss = -torch.mean(torch.sum(p * torch.log(p + 1e-8), dim=1))
+            loss = ce_loss + lambda_entropy * entropy_loss
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+    plot_weights(model, lambda_entropy)

@@ -1,0 +1,30 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+
+X = torch.rand(500, 2)
+y = (X[:, 0] + X[:, 1] > 1).long()
+
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(2, 10)
+        self.output = nn.Linear(10, 2)
+    
+    def forward(self, x):
+        x = torch.relu(self.hidden(x))
+        return self.output(x)
+
+model = SimpleNet()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+for epoch in range(100):
+    optimizer.zero_grad()
+    output = model(X)
+    loss = criterion(output, y)
+    loss.backward()
+    optimizer.step()
+
+print("Done")
